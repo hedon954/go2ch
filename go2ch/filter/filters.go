@@ -15,7 +15,7 @@ const (
 type FilterFunc func(map[string]interface{}) map[string]interface{}
 
 // CreateFilters creates a serial of filters according to cluster config.
-func CreateFilters(p config.Cluster) []FilterFunc {
+func CreateFilters(p *config.Cluster) []FilterFunc {
 	var filters []FilterFunc
 
 	for _, f := range p.Filters {

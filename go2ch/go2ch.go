@@ -3,17 +3,21 @@ package main
 import (
 	"context"
 	"flag"
+	"time"
+
 	"github.com/zeromicro/go-queue/kq"
-	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/proc"
 	"github.com/zeromicro/go-zero/core/service"
+
 	"go2ch/go2ch/ch"
 	"go2ch/go2ch/config"
 	"go2ch/go2ch/filter"
 	"go2ch/go2ch/handler"
 )
 
-var configFile = flag.String("f", "etc/config,.yml", "Specify the config file")
+var configFile = flag.String("f", "etc/config.yml", "Specify the config file")
+
+//var logDirectory = flag.String("l", "log", "Specify the log directory")
 
 func main() {
 
@@ -29,7 +33,7 @@ func main() {
 	}
 
 	// sets the waiting time before force quitting.
-	proc.SetTimeToForceQuit(c.GracePeriod)
+	proc.SetTimeToForceQuit(time.Duration(c.GracePeriodSecond) * time.Second)
 
 	// create a new go-zero service group
 	group := service.NewServiceGroup()
@@ -39,7 +43,9 @@ func main() {
 		// clickhouse writer
 		ctx := context.Background()
 		chWriter, err := ch.NewWriter(ctx, cluster.Output.ClickHouse)
-		logx.Must(err)
+		if err != nil {
+			panic(err)
+		}
 
 		// data filters
 		filters := filter.CreateFilters(cluster)
@@ -50,10 +56,12 @@ func main() {
 		handle.AddFilters(filter.AddUriFieldFilter("url", "uri"))
 
 		// kafka
-		ks := config.GetKafkaConf(&cluster.Input.Kafka)
+		ks := config.GetKafkaConf(cluster.Input.Kafka)
 		for _, k := range ks {
 			mq, err := kq.NewQueue(*k, handle)
-			logx.Must(err)
+			if err != nil {
+				panic(err)
+			}
 			group.Add(mq)
 		}
 	}

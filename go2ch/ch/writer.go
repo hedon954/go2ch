@@ -20,7 +20,7 @@ type Writer struct {
 }
 
 // NewWriter creates a new writer for clickhouse
-func NewWriter(ctx context.Context, c config.ClickHouseConf) (*Writer, error) {
+func NewWriter(ctx context.Context, c *config.ClickHouseConf) (*Writer, error) {
 	conn, err := clickhouse.Open(&clickhouse.Options{
 		Addr: c.Addrs,
 		Auth: clickhouse.Auth{
