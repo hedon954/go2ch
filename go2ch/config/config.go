@@ -3,90 +3,79 @@ package config
 import (
 	"fmt"
 	"github.com/zeromicro/go-queue/kq"
-	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
-	"go2ch/go2ch/util"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 )
 
 type Condition struct {
-	Key   string `yaml:"Key" json:"Key""`
-	Value string `yaml:"Value" json:"Value"`
-	Type  string `yaml:"Type" json:"Type,default=match,options=match|contains"`
-	Op    string `yaml:"Op" json:"Op,default=and,options=and|or"`
+	Key   string
+	Value string
+	Type  string `json:",default=match,options=match|contains"`
+	Op    string `json:",default=and,options=and|or"`
 }
 
 type ClickHouseConf struct {
-	Addrs                 []string `yaml:"Addrs" json:"Addrs"`
-	Username              string   `yaml:"Username" json:"Username,default=default"`
-	Password              string   `yaml:"Password" json:"Password,optional"`
-	Database              string   `yaml:"Database" json:"Database,default=default"`
-	TableName             string   `yaml:"TableName" json:"TableName"`
-	DDL                   string   `yaml:"DDL" json:"DDL"`
-	DialTimeoutSecond     int      `yaml:"DialTimeoutSecond" json:"DialTimeoutSecond,optional,default=5"`
-	MaxIdleConns          int      `yaml:"MaxIdleConns" json:"MaxIdleConns,optional,default=5"`
-	MaxOpenConns          int      `yaml:"MaxOpenConns" json:"MaxOpenConns,optional,default=10"`
-	ConnMaxLiftTimeMinute int      `yaml:"ConnMaxLiftTimeMinute" json:"ConnMaxLiftTimeMinute,optional,default=60"`
-	MaxChunkBytes         int      `yaml:"MaxChunkBytes" json:"MaxChunkBytes,optional,default=10485760"`
-	FlushIntervalSecond   int      `yaml:"FlushIntervalSecond" json:"FlushIntervalSecond,default=5"`
+	Addrs                 []string
+	Username              string `json:",default=default"`
+	Password              string `json:",optional"`
+	Database              string `json:",default=default"`
+	TableName             string
+	DDL                   string
+	DialTimeoutSecond     int `json:",optional,default=5"`
+	MaxIdleConns          int `json:",optional,default=5"`
+	MaxOpenConns          int `json:",optional,default=10"`
+	ConnMaxLiftTimeMinute int `json:",optional,default=60"`
+	MaxChunkBytes         int `json:",optional,default=10485760"`
+	FlushIntervalSecond   int `json:",default=5"`
 }
 
 type Filter struct {
-	Action     string      `yaml:"Action" json:"Action,options=drop|remove_field|transfer"`
-	Conditions []Condition `yaml:"Conditions" json:"Conditions,optional"`
-	Fields     []string    `yaml:"Fields" json:"Fields,optional"`
-	Field      string      `yaml:"Field" json:"Field,optional"`
-	Target     string      `yaml:"Target" json:"Target,optional"`
+	Action     string      `json:",options=drop|remove_field|transfer"`
+	Conditions []Condition `json:",optional"`
+	Fields     []string    `json:",optional"`
+	Field      string      `json:",optional"`
+	Target     string      `json:",optional"`
 }
 
 type KafkaConf struct {
-	Name       string   `yaml:"Name" json:"Name"`
-	Brokers    []string `yaml:"Brokers" json:"Brokers"`
-	Group      string   `yaml:"Group" json:"Group"`
-	Topics     []string `yaml:"Topics" json:"Topics"`
-	Offset     string   `yaml:"Offset" json:"Offset,options=first|last,default=last"`
-	Conns      int      `yaml:"Conns" json:"Conns,default=1"`
-	Consumers  int      `yaml:"Consumers" json:"Consumers,default=8"`
-	Processors int      `yaml:"Processors" json:"Processors,default=8"`
-	MinBytes   int      `yaml:"MinBytes" json:"MinBytes,default=10240"`    // 10K
-	MaxBytes   int      `yaml:"MaxBytes" json:"MaxBytes,default=10485760"` // 10M
+	service.ServiceConf
+	Name       string
+	Brokers    []string
+	Group      string
+	Topics     []string
+	Offset     string `json:",options=first|last,default=last"`
+	Conns      int    `json:",default=1"`
+	Consumers  int    `json:",default=8"`
+	Processors int    `json:",default=8"`
+	MinBytes   int    `json:",default=10240"`    // 10K
+	MaxBytes   int    `json:",default=10485760"` // 10M
 }
 
 type Cluster struct {
-	Input   *Input   `yaml:"Input" json:"Input"`
-	Filters []Filter `yaml:"Filters" json:"Filters,optional"`
-	Output  *Output  `yaml:"Output" json:"Output"`
+	Input   *Input
+	Filters []Filter `json:",optional"`
+	Output  *Output
 }
 
 type Input struct {
-	Kafka *KafkaConf `yaml:"Kafka" json:"Kafka"`
+	Kafka *KafkaConf
 }
 
 type Output struct {
-	ClickHouse *ClickHouseConf `yaml:"ClickHouse" json:"ClickHouse"`
+	ClickHouse *ClickHouseConf
 }
 
 type Config struct {
-	Clusters          []*Cluster `yaml:"Clusters" json:"clusters"`
-	GracePeriodSecond int        `yaml:"GracePeriod" json:"gracePeriod,optional,default=10"`
+	Clusters          []*Cluster
+	GracePeriodSecond int `json:",optional,default=10"`
 }
 
 // ReadConfig read config file and return a *Config
 func ReadConfig(path string) (*Config, error) {
-
 	var c Config
-	bs, err := ioutil.ReadFile(path)
+	err := conf.LoadConfig(path, &c)
 	if err != nil {
-		return nil, fmt.Errorf("readConfig | read file[%s] failed: %v", path, err)
-	}
-	err = yaml.Unmarshal(bs, &c)
-	if err != nil {
-		return nil, fmt.Errorf("readConfig | load config from yaml bytes failed: %v", err)
-	}
-	err = buildConfig(&c)
-	if err != nil {
-		return nil, fmt.Errorf("readConfig | build config failed: %v", err)
+		return nil, fmt.Errorf("readConfig | load config[%v] failed: %v", path, err)
 	}
 	return &c, nil
 }
@@ -187,29 +176,30 @@ func GetKafkaConf(c *KafkaConf) []*kq.KqConf {
 	for _, topic := range c.Topics {
 		ret = append(ret, &kq.KqConf{
 			// TODO: make it customizable
-			ServiceConf: service.ServiceConf{
-				Name: c.Name,
-				Log: logx.LogConf{
-					ServiceName:         c.Name,
-					Mode:                "file",
-					Encoding:            "plain",
-					TimeFormat:          util.TimestampFormat_Short,
-					Path:                fmt.Sprintf("log/%s", c.Name),
-					Level:               "info",
-					Compress:            false,
-					KeepDays:            7,
-					StackCooldownMillis: 100,
-				},
-			},
-			Brokers:    c.Brokers,
-			Group:      c.Group,
-			Topic:      topic,
-			Offset:     c.Offset,
-			Conns:      c.Conns,
-			Consumers:  c.Consumers,
-			Processors: c.Processors,
-			MinBytes:   c.MinBytes,
-			MaxBytes:   c.MaxBytes,
+			//ServiceConf: service.ServiceConf{
+			//	Name: c.Name,
+			//	Log: logx.LogConf{
+			//		ServiceName:         c.Name,
+			//		Mode:                "file",
+			//		Encoding:            "plain",
+			//		TimeFormat:          util.TimestampFormat_Short,
+			//		Path:                fmt.Sprintf("log/%s", c.Name),
+			//		Level:               "info",
+			//		Compress:            false,
+			//		KeepDays:            7,
+			//		StackCooldownMillis: 100,
+			//	},
+			//},
+			ServiceConf: c.ServiceConf,
+			Brokers:     c.Brokers,
+			Group:       c.Group,
+			Topic:       topic,
+			Offset:      c.Offset,
+			Conns:       c.Conns,
+			Consumers:   c.Consumers,
+			Processors:  c.Processors,
+			MinBytes:    c.MinBytes,
+			MaxBytes:    c.MaxBytes,
 		})
 	}
 	return ret

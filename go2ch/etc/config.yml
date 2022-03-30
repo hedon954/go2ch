@@ -8,7 +8,6 @@ Clusters:
         - hdLog
       Group: test
       Consumers: 16
-
   Filters:
     - Action: drop
       Conditions:
