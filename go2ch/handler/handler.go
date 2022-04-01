@@ -15,7 +15,8 @@ type MessageHandler struct {
 // NewHandler creates a new message handler which is used to consume the message from kafka
 func NewHandler(writer *ch.Writer) *MessageHandler {
 	return &MessageHandler{
-		writer: writer,
+		writer:  writer,
+		filters: []filter.FilterFunc{filter.RecoverFilter("kafka")},
 	}
 }
 
@@ -35,7 +36,7 @@ func (mh *MessageHandler) Consume(key, value string) error {
 
 	for _, filter := range mh.filters {
 		if m = filter(m); m == nil {
-			return fmt.Errorf("consume | run filters error, m became nil")
+			return fmt.Errorf("consume | m became nil")
 		}
 	}
 

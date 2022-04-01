@@ -1,0 +1,60 @@
+Clusters:
+  - Input:
+      Kafka:
+        Name: example_logger
+        Brokers:
+          - "172.16.208.160:9092"
+          - "172.16.208.161:9092"
+          - "172.16.208.162:9092"
+        Topics:
+          - t_logger
+        Group: test
+        Consumers: 16
+    Filters:
+      - Action: drop
+        Conditions:
+          - Key: drop_key_contains
+            Value: drop-contains
+            Type: contains
+          - Key: drop_key_match
+            Value: drop-match
+            Type: match
+            Op: and
+      - Action: remove_field
+        Fields:
+          - remove_field_1
+          - remove_field_2
+      - Action: transfer
+        Field: transfer_field
+        Target: transfer_target
+      - Action: time_format
+        Field: create_time
+        ClickHouseType: Datetime
+        Local: Local
+        Layout: 2006-01-02 15:04:05
+    Output:
+      ClickHouse:
+        Addrs:
+          - "172.16.208.160:9000"
+        Username: default
+        Password: ""
+        Database: default
+        TableName: example_logger
+        DDL: "CREATE TABLE IF NOT EXISTS example_logger
+            (
+                `id` UInt32,
+                `logger_id` String,
+                `info` String,
+                `transfer_target` String,
+                `create_time` Datetime
+            )
+            ENGINE = MergeTree
+            PARTITION BY toYYYYMMDD(create_time)
+            PRIMARY KEY (id)
+            ORDER BY (id, logger_id);"
+        DialTimeoutSecond: 5
+        MaxIdleConns: 5
+        MaxOpenConns: 10
+        ConnMaxLiftTimeMinute: 60
+        MaxChunkBytes: 10485760
+        FlushIntervalSecond: 5

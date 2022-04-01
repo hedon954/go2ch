@@ -1,11 +1,14 @@
 package filter
 
-import "go2ch/go2ch/config"
+import (
+	"go2ch/go2ch/config"
+)
 
 const (
 	filterDrop         = "drop"
 	filterRemoveFields = "remove_field"
 	filterTransfer     = "transfer"
+	filterTimeFormat   = "time_format"
 	opAnd              = "and"
 	opOr               = "or"
 	typeContains       = "contains"
@@ -26,6 +29,8 @@ func CreateFilters(p *config.Cluster) []FilterFunc {
 			filters = append(filters, RemoveFieldFilter(f.Fields))
 		case filterTransfer:
 			filters = append(filters, TransferFilter(f.Field, f.Target))
+		case filterTimeFormat:
+			filters = append(filters, TimeFormatFilter(f.Field, f.Layout, f.Local))
 		}
 	}
 

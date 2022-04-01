@@ -1,51 +1,56 @@
 Clusters:
 - Input:
     Kafka:
-      Name: go2ch
+      Name: example_logger
       Brokers:
-        - "172.16.186.16:19092"
+        - "172.16.208.160:9092"
+        - "172.16.208.161:9092"
+        - "172.16.208.162:9092"
       Topics:
-        - hdLog
+        - t_logger
       Group: test
       Consumers: 16
   Filters:
     - Action: drop
       Conditions:
-        - Key: k8s_container_name
-          Value: "-rpc"
+        - Key: drop_key_contains
+          Value: drop-contains
           Type: contains
-        - Key: level
-          Value: info
+        - Key: drop_key_match
+          Value: drop-match
           Type: match
           Op: and
     - Action: remove_field
       Fields:
-        - message
-        - _source
-        - _type
-        - _score
-        - _id
-        - "@version"
-        - topic
-        - index
-        - beat
-        - docker_container
-        - offset
-        - prospector
-        - source
-        - stream
+        - remove_field_1
+        - remove_field_2
     - Action: transfer
-      Field: message
-      Target: data
+      Field: transfer_field
+      Target: transfer_target
+    - Action: time_format
+      Field: create_time
+      Local: Local
+      Layout: 2006-01-02 15:04:05
   Output:
     ClickHouse:
       Addrs:
-        - "172.16.141.4:9200"
-      Username: "default"
+        - "172.16.208.160:9000"
+      Username: default
       Password: ""
-      Database: "default"
-      TableName: "hdLog"
-      DDL: ""
+      Database: default
+      TableName: example_logger
+      DDL: "CREATE TABLE IF NOT EXISTS example_logger
+            (
+                `id` UInt32,
+                `logger_id` String,
+                `info` String,
+                `transfer_target` String,
+                `create_time` Datetime
+            )
+            ENGINE = MergeTree
+            PARTITION BY toYYYYMMDD(create_time)
+            PRIMARY KEY (id)
+            ORDER BY (id, logger_id);"
       DialTimeoutSecond: 5
       MaxIdleConns: 5
       MaxOpenConns: 10

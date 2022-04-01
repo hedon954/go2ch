@@ -17,8 +17,6 @@ import (
 
 var configFile = flag.String("f", "etc/config.yml", "Specify the config file")
 
-//var logDirectory = flag.String("l", "log", "Specify the log directory")
-
 func main() {
 
 	// adds a flag "f" to this program
