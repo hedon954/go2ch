@@ -4,13 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/hpcloud/tail"
 	"github.com/shopspring/decimal"
+
 	"go2ch/go2ch/config"
 	kf "go2ch/go2ch/kafka"
 	"go2ch/go2ch/util"
-	"os"
-	"time"
 )
 
 /**
@@ -33,7 +35,6 @@ type Log struct {
 	DropKeyMatch    string          `json:"drop_key_match"`
 	RemoveField1    string          `json:"remove_field_1"`
 	RemoveField2    string          `json:"remove_field_2"`
-	Array           []interface{}   `json:"array"`
 }
 
 func main() {
@@ -109,19 +110,6 @@ func writeLog(path string) {
 				DropKeyMatch:    dropKeyMatch,
 				RemoveField1:    fmt.Sprintf("remove-field-1-%d", i),
 				RemoveField2:    fmt.Sprintf("remove-field-2-%d", i),
-				Array: []interface{}{111, "11", 22.22, time.Now(), &Log{
-					Id:              uint32(i),
-					FId:             float64(i),
-					DId:             decimal.NewFromFloat(222.22),
-					LoggerID:        fmt.Sprintf("logger-%d", i),
-					Info:            fmt.Sprintf("this is logger info-%d", i),
-					TransferField:   fmt.Sprintf("transfer-field-%d", i),
-					CreateTime:      time.Now().AddDate(0, 0, i).Format(util.TimestampFormat_Datetime),
-					DropKeyContains: dropKeyContains,
-					DropKeyMatch:    dropKeyMatch,
-					RemoveField1:    fmt.Sprintf("remove-field-1-%d", i),
-					RemoveField2:    fmt.Sprintf("remove-field-2-%d", i),
-				}},
 			}
 
 			bs, err := json.Marshal(&l)
@@ -129,12 +117,13 @@ func writeLog(path string) {
 				panic(err)
 			}
 			_, err = f.WriteString(string(bs) + "\n")
-			fmt.Println("producer write - " + string(bs))
+			//fmt.Println("producer write - " + string(bs))
 			if err != nil {
 				panic(err)
 			}
 
-			time.Sleep(5 * time.Second)
+			//time.Sleep(5 * time.Second)
+			fmt.Printf("id: %d, send time: %d\n", i, time.Now().UnixNano())
 		}
 	}()
 }

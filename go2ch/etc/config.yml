@@ -10,6 +10,12 @@ Clusters:
         - t_logger
       Group: test
       Consumers: 16
+      Pusher:
+        Port: 10010
+      Puller:
+        Uri: ""
+        Method: POST
+        Header: ""
   Filters:
     - Action: drop
       Conditions:

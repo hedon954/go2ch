@@ -3,16 +3,18 @@ package ch
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
+	"go2ch/go2ch/config"
+	"go2ch/go2ch/filter"
+
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/zeromicro/go-zero/core/executors"
 	"github.com/zeromicro/go-zero/core/logx"
-	"go2ch/go2ch/config"
-	"go2ch/go2ch/filter"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type Writer struct {
@@ -33,6 +35,10 @@ type rowDesc struct {
 	CodecExpression   string `json:"codec_expression"`
 	TTLExpression     string `json:"ttl_expression"`
 }
+
+var index int64 = 0
+var total int64 = 0
+var size int64 = 0
 
 // NewWriter creates a new writer for clickhouse
 func NewWriter(ctx context.Context, c *config.ClickHouseConf) (*Writer, error) {
@@ -95,25 +101,33 @@ func (w *Writer) Write(data string) error {
 
 // execute sends chunk values to clickhouse, it would be called when the chunk is full or reaches flash interval time
 func (w *Writer) execute(values []interface{}) {
+
+	index++
+
+	start := time.Now().UnixNano()
+
 	batch, err := w.conn.PrepareBatch(w.ctx, "INSERT INTO "+w.tableName)
 	if err != nil {
 		logx.Errorf("execute | prepare clickhouse insert batch sql failed: %v", err)
 		return
 	}
+	var length = 0
 	for _, value := range values {
+		length += len(value.(string))
+
 		m := make(map[string]interface{})
 		err = jsoniter.Unmarshal([]byte(value.(string)), &m)
 		if err != nil {
 			logx.Errorf("execute | unmarshal value failed: %v", err)
 			return
 		}
-		fmt.Println("execute - m:", m)
+		//fmt.Println("execute - m:", m)
 		stru, err := w.getDataStruct(m)
 		if err != nil {
 			logx.Errorf("execute | convert data to struct failed: %v", err)
 			return
 		}
-		fmt.Println("execute - stru:", stru)
+		//fmt.Println("execute - stru:", stru)
 		err = batch.Append(stru...)
 		if err != nil {
 			logx.Errorf("execute | append value to clickhouse insert batch failed: %v", err)
@@ -126,6 +140,15 @@ func (w *Writer) execute(values []interface{}) {
 		logx.Errorf("execute | send values to clickhouse failed: %v", err)
 		return
 	}
+
+	end := time.Now().UnixNano()
+	use := end - start
+	total += use
+	size += int64(length)
+
+	fmt.Printf("execute function | finish send time: %d\n", end)
+
+	fmt.Printf("execute function | send index=%d, one data size=%dbytes, total data size=%dbytes, one use time=%dns, total use time=%dns, avg=%dns\n", index, length, size, use, total, total/index)
 }
 
 // getColumns returns the descriptions of rows in clickhouse table

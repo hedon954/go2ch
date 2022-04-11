@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+
 	"github.com/zeromicro/go-queue/kq"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
@@ -51,6 +52,18 @@ type KafkaConf struct {
 	Processors int    `json:",default=8"`
 	MinBytes   int    `json:",default=10240"`    // 10K
 	MaxBytes   int    `json:",default=10485760"` // 10M
+	Pusher     *KafkaPusher
+	Puller     *KafkaPuller
+}
+
+type KafkaPusher struct {
+	Port int `json:",optional,default=10010"`
+}
+
+type KafkaPuller struct {
+	Uri    string `json:",optional"`
+	Method string `json:",optional"`
+	Header string `json:",optional"`
 }
 
 type Cluster struct {

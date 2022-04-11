@@ -3,6 +3,11 @@ package main
 import (
 	"context"
 	"flag"
+	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/rest"
+	kf "go2ch/go2ch/kafka"
+	"go2ch/go2ch/producer/pusher"
+	"net/http"
 	"time"
 
 	"github.com/zeromicro/go-queue/kq"
@@ -51,7 +56,7 @@ func main() {
 		// data handler
 		handle := handler.NewHandler(chWriter)
 		handle.AddFilters(filters...)
-		handle.AddFilters(filter.AddUriFieldFilter("url", "uri"))
+		//handle.AddFilters(filter.AddUriFieldFilter("url", "uri"))
 
 		// kafka
 		ks := config.GetKafkaConf(cluster.Input.Kafka)
@@ -62,8 +67,40 @@ func main() {
 			}
 			group.Add(mq)
 		}
+
+		// start a service to support pull and send data
+		kw, err := kf.NewWriter(context.Background(), cluster.Input.Kafka)
+		if err != nil {
+			panic(err)
+		}
+		kp := pusher.NewPusher(kw)
+		ser, err := rest.NewServer(rest.RestConf{
+			Port: cluster.Input.Kafka.Pusher.Port,
+			ServiceConf: service.ServiceConf{
+				Log: logx.LogConf{
+					Path: "./log/go2ch/kafka",
+				},
+			},
+		})
+		if err != nil {
+			panic(err)
+		}
+		ser.AddRoutes([]rest.Route{
+			{
+				Path:    "/pushOne",
+				Method:  http.MethodPost,
+				Handler: kp.PushOne,
+			},
+			{
+				Path:    "/pushList",
+				Method:  http.MethodPost,
+				Handler: kp.PushList,
+			},
+		})
+		group.Add(ser)
 	}
 
 	// start go-zero service
 	group.Start()
+
 }

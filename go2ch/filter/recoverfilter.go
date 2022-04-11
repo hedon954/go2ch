@@ -2,6 +2,7 @@ package filter
 
 import (
 	"encoding/json"
+
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -22,7 +23,7 @@ func RecoverFilter(input string) FilterFunc {
 				}
 				return n
 			} else {
-				logx.Errorf("RecoverFilter | search field Text in m failed")
+				//logx.Errorf("RecoverFilter | search field Text in m failed")
 				return m
 			}
 		}

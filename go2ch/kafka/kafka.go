@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/segmentio/kafka-go"
-	"go2ch/go2ch/config"
 	"net"
 	"strconv"
+
+	"go2ch/go2ch/config"
+
+	"github.com/segmentio/kafka-go"
 )
 
 type Writer struct {
