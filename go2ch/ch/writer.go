@@ -18,12 +18,14 @@ import (
 )
 
 type Writer struct {
-	ctx       context.Context
-	conn      driver.Conn
-	executor  *executors.ChunkExecutor
-	ddl       string
-	tableName string
-	columns   []*rowDesc
+	ctx                  context.Context
+	conn                 driver.Conn
+	executor             *executors.ChunkExecutor
+	ddl                  string
+	distributedDDL       string
+	tableName            string
+	distributedTableName string
+	columns              []*rowDesc
 }
 
 type rowDesc struct {
@@ -59,10 +61,12 @@ func NewWriter(ctx context.Context, c *config.ClickHouseConf) (*Writer, error) {
 	}
 
 	writer := &Writer{
-		ctx:       ctx,
-		conn:      conn,
-		ddl:       c.DDL,
-		tableName: c.TableName,
+		ctx:                  ctx,
+		conn:                 conn,
+		ddl:                  c.DDL,
+		distributedDDL:       c.DistributedDDL,
+		tableName:            c.TableName,
+		distributedTableName: c.DistributedTableName,
 	}
 
 	err = writer.initTable()
@@ -79,6 +83,13 @@ func (w *Writer) initTable() error {
 	err := w.conn.Exec(w.ctx, w.ddl)
 	if err != nil {
 		return fmt.Errorf("initTable | exec clickhouse table init sql failed: %v", err)
+	}
+
+	if strings.TrimSpace(w.distributedDDL) != "" {
+		err = w.conn.Exec(w.ctx, w.distributedDDL)
+		if err != nil {
+			return fmt.Errorf("initTable | exec clickhouse distributed table init sql failed: %v", err)
+		}
 	}
 
 	rowDescs, err := w.getColumns()

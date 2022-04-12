@@ -21,13 +21,15 @@ type ClickHouseConf struct {
 	Password              string `json:",optional"`
 	Database              string `json:",default=default"`
 	TableName             string
+	DistributedTableName  string `json:",optional"`
 	DDL                   string
-	DialTimeoutSecond     int `json:",optional,default=5"`
-	MaxIdleConns          int `json:",optional,default=5"`
-	MaxOpenConns          int `json:",optional,default=10"`
-	ConnMaxLiftTimeMinute int `json:",optional,default=60"`
-	MaxChunkBytes         int `json:",optional,default=10485760"`
-	FlushIntervalSecond   int `json:",default=5"`
+	DistributedDDL        string `json:",optional"`
+	DialTimeoutSecond     int    `json:",optional,default=5"`
+	MaxIdleConns          int    `json:",optional,default=5"`
+	MaxOpenConns          int    `json:",optional,default=10"`
+	ConnMaxLiftTimeMinute int    `json:",optional,default=60"`
+	MaxChunkBytes         int    `json:",optional,default=10485760"`
+	FlushIntervalSecond   int    `json:",optional,default=5"`
 }
 
 type Filter struct {
@@ -53,17 +55,10 @@ type KafkaConf struct {
 	MinBytes   int    `json:",default=10240"`    // 10K
 	MaxBytes   int    `json:",default=10485760"` // 10M
 	Pusher     *KafkaPusher
-	Puller     *KafkaPuller
 }
 
 type KafkaPusher struct {
 	Port int `json:",optional,default=10010"`
-}
-
-type KafkaPuller struct {
-	Uri    string `json:",optional"`
-	Method string `json:",optional"`
-	Header string `json:",optional"`
 }
 
 type Cluster struct {

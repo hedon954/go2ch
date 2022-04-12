@@ -3,21 +3,21 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/zeromicro/go-zero/core/logx"
-	"github.com/zeromicro/go-zero/rest"
-	kf "go2ch/go2ch/kafka"
-	"go2ch/go2ch/producer/pusher"
 	"net/http"
 	"time"
 
 	"github.com/zeromicro/go-queue/kq"
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/proc"
 	"github.com/zeromicro/go-zero/core/service"
+	"github.com/zeromicro/go-zero/rest"
 
 	"go2ch/go2ch/ch"
 	"go2ch/go2ch/config"
 	"go2ch/go2ch/filter"
 	"go2ch/go2ch/handler"
+	kf "go2ch/go2ch/kafka"
+	"go2ch/go2ch/producer/pusher"
 )
 
 var configFile = flag.String("f", "etc/config.yml", "Specify the config file")
