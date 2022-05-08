@@ -18,7 +18,7 @@ func DropFilter(conditions []config.Condition) FilterFunc {
 			case typeMatch:
 				qualifyOnce = condition.Value == m[condition.Key]
 			case typeContains:
-				if val, ok := m[condition.Value].(string); ok {
+				if val, ok := m[condition.Key].(string); ok {
 					qualifyOnce = strings.Contains(val, condition.Value)
 				}
 			}

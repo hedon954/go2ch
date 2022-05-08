@@ -4,10 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"go2ch/go2ch/config"
 	"net"
 	"strconv"
-
-	"go2ch/go2ch/config"
 
 	"github.com/segmentio/kafka-go"
 )

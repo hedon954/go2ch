@@ -10,6 +10,8 @@ Clusters:
           - t_logger
         Group: test
         Consumers: 16
+        Pusher:
+          Port: 10010
     Filters:
       - Action: drop
         Conditions:
@@ -29,18 +31,20 @@ Clusters:
         Target: transfer_target
       - Action: time_format
         Field: create_time
-        ClickHouseType: Datetime
         Local: Local
         Layout: 2006-01-02 15:04:05
     Output:
       ClickHouse:
         Addrs:
           - "172.16.208.160:9000"
+          - "172.16.208.161:9000"
+          - "172.16.208.162:9000"
         Username: default
         Password: ""
         Database: default
         TableName: example_logger
-        DDL: "CREATE TABLE IF NOT EXISTS example_logger
+        DistributedTableName: example_logger_all
+        DDL: "CREATE TABLE IF NOT EXISTS example_logger ON CLUSTER go2ch_cluster
             (
                 `id` UInt32,
                 `logger_id` String,
@@ -48,10 +52,19 @@ Clusters:
                 `transfer_target` String,
                 `create_time` Datetime
             )
-            ENGINE = MergeTree
+            ENGINE = ReplicatedMergeTree('/clickhouse/tables/{shard}/example_logger', '{replica}')
             PARTITION BY toYYYYMMDD(create_time)
             PRIMARY KEY (id)
             ORDER BY (id, logger_id);"
+        DistributedDDL: "CREATE TABLE IF NOT EXISTS example_logger_all ON CLUSTER go2ch_cluster
+                      (
+                          `id` UInt32,
+                          `logger_id` String,
+                          `info` String,
+                          `transfer_target` String,
+                          `create_time` Datetime
+                      )
+                      ENGINE = Distributed(go2ch_cluster, default, example_logger, hiveHash(logger_id));"
         DialTimeoutSecond: 5
         MaxIdleConns: 5
         MaxOpenConns: 10

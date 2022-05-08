@@ -65,11 +65,14 @@ func main() {
 	// imitate write log
 	writeLog(logPath)
 
+	i := 0
 	for line := range t.Lines {
 		err = kw.Produce(line)
 		if err != nil {
 			panic(err)
 		}
+		i++
+		fmt.Printf("id: %d, send time: %d\n", i, time.Now().UnixNano())
 	}
 
 	// blocking, continue monitoring
@@ -123,7 +126,6 @@ func writeLog(path string) {
 			}
 
 			//time.Sleep(5 * time.Second)
-			fmt.Printf("id: %d, send time: %d\n", i, time.Now().UnixNano())
 		}
 	}()
 }
