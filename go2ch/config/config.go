@@ -11,8 +11,8 @@ import (
 type Condition struct {
 	Key   string
 	Value string
-	Type  string `json:",default=match,options=match|contains"`
-	Op    string `json:",default=and,options=and|or"`
+	Type  string `json:",optional,default=match,options=match|contains"`
+	Op    string `json:",optional,default=and,options=and|or"`
 }
 
 type ClickHouseConf struct {
